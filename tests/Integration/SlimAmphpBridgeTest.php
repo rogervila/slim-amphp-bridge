@@ -8,6 +8,7 @@ use Amp\DeferredCancellation;
 use Amp\DeferredFuture;
 use Amp\Http\Client\HttpClientBuilder;
 use Amp\Http\Client\Request;
+use Amp\Http\Client\SocketException;
 use Amp\Http\Server\Driver\HttpDriver;
 use Amp\TimeoutCancellation;
 use InvalidArgumentException;
@@ -140,18 +141,31 @@ final class SlimAmphpBridgeTest extends TestCase
 
     public function testAmphpRejectsOversizedBodiesWithAClientError(): void
     {
-        $server = AmphpServerFactory::create(new ApplicationFactory(), port: 0);
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::never())->method('error');
+        $server = AmphpServerFactory::create(new ApplicationFactory(), port: 0, logger: $logger);
         $server->start();
 
         try {
+            $client = HttpClientBuilder::buildDefault();
             $request = new Request(self::baseUrl($server) . '/todos', 'POST');
             $request->setProtocolVersions(['1.1']);
             $request->setBody(str_repeat('x', HttpDriver::DEFAULT_BODY_SIZE_LIMIT + 1));
 
-            $response = HttpClientBuilder::buildDefault()->request($request, new TimeoutCancellation(5));
+            try {
+                $response = $client->request($request, new TimeoutCancellation(5));
 
-            self::assertSame(413, $response->getStatus());
-            $response->getBody()->buffer();
+                self::assertSame(413, $response->getStatus());
+                $response->getBody()->buffer();
+            } catch (SocketException $exception) {
+                // On platforms such as Windows, terminating the TCP connection while
+                // unread bytes remain in the socket receive buffer sends a TCP reset (RST),
+                // which causes the client to receive an early socket closure exception.
+                self::assertStringContainsString('closed early', $exception->getMessage());
+            }
+
+            $healthy = $client->request(new Request(self::baseUrl($server) . '/todos'), new TimeoutCancellation(5));
+            self::assertSame(200, $healthy->getStatus());
         } finally {
             $server->stop();
         }
