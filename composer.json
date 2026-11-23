@@ -1,0 +1,55 @@
+{
+    "name": "rogervila/slim-amphp-bridge",
+    "description": "Run a persistent Slim 4 application on an AmPHP HTTP server.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.2",
+        "amphp/amp": "^3.0",
+        "amphp/http": "^2.0",
+        "amphp/http-server": "^3.0",
+        "amphp/socket": "^2.0",
+        "nyholm/psr7": "^1.8",
+        "psr/http-factory": "^1.0",
+        "psr/http-message": "^1.1 || ^2.0",
+        "psr/http-server-handler": "^1.0",
+        "psr/log": "^3.0",
+        "slim/slim": "^4.14"
+    },
+    "require-dev": {
+        "amphp/http-client": "^5.0",
+        "amphp/process": "^2.0",
+        "friendsofphp/php-cs-fixer": "^3.0",
+        "php-di/slim-bridge": "^3.4",
+        "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^11.0"
+    },
+    "suggest": {
+        "amphp/http-client": "For non-blocking outbound HTTP requests.",
+        "amphp/mysql": "For non-blocking MySQL access.",
+        "amphp/parallel": "For CPU-bound work or isolating blocking dependencies.",
+        "amphp/redis": "For non-blocking Redis access."
+    },
+    "autoload": {
+        "psr-4": {
+            "Rogervila\\SlimAmphpBridge\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Rogervila\\SlimAmphpBridge\\Example\\": "examples/src/",
+            "Rogervila\\SlimAmphpBridge\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "analyse": "phpstan analyse",
+        "style": "php-cs-fixer check --diff --using-cache=no",
+        "test": "phpunit"
+    },
+    "archive": {
+        "exclude": ["/examples/", "/tmp/", "/vendor/", "/composer.lock", "*.phar"]
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
